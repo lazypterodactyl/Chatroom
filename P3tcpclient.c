@@ -11,16 +11,24 @@
 #define MAXNAME 256
 int main(int argc, char* argv[])
 {
-    
+    //server name
     struct hostent *hp;
+    //socket address
     struct sockaddr_in sin;
+    //hostname
     char *host;
+    //create buffer
     char buf[MAX_LINE];
+    //username
     char *uName;
+    //socket
     int s;
+    //length
     int len;
+    //group#
     int gnum;
     pthread_t threads[1];
+    //ensures user sets a host and username
     if(argc == 3){
         host = argv[1];
         uName = argv[2];
@@ -41,7 +49,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
     //printf("socket: ");
-    printf("local socket number %d\n", s);
+    printf("Server socket number %d\n", s);
     printf("\n");
     /* build address data structure */
     bzero((char*)&sin, sizeof(sin));
@@ -99,6 +107,7 @@ int main(int argc, char* argv[])
         rg2.type = htons(121);
         strcpy(rg2.mName,clientname);
         strcpy(rg2.uName,uName);
+        //Go through Registration process
         if(send(s,&rg2,sizeof(rg2),0) < 0){
                     printf("\n Send failed\n");
                     exit(1);
@@ -121,18 +130,20 @@ int main(int argc, char* argv[])
     //}
         }
     }
+    //function for recieving chat reply packets from server
     void *chat_reciever()
     {
         while(1)
         {
             while(len = recv(s,&packet_chatRe,sizeof(packet_chatRe),0))
-                        {
-                    printf("\n Recieved chat response packet. Printing chat data: ");
+            {
+                    printf("\n %s: ", packet_chatRe.uName);
                     fputs(packet_chatRe.data, stdout);
-                }close(s);
+            }close(s);
         }
         pthread_exit(NULL);
     }
+    //create seperate thread for recieving chat replies from server
     pthread_create(&threads[0],NULL,chat_reciever,NULL);
     int newsock;
     /* main loop: get and send lines of text */

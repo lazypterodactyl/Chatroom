@@ -67,81 +67,82 @@ int main(int argc, char* argv[])
     int threadI = 1;
     //global mutex variable
     pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+    //define Queue structure
     typedef struct Queue
-{
+    {
         int capacity;
         int size;
         int front;
         int rear;
+        //packet array of size 10 packets. Shouldn't need more than that for this project
         struct packet packets[10];
-}Queue;
-Queue * createQueue(int maxElements, struct packet *p1)
-{
-        /* Create a Queue */
+    }Queue;
+
+    //create queue function. Needs a max number of elements and a boiler plate packet to initialize.
+    Queue * createQueue(int maxElements, struct packet *p1)
+    {
         Queue *Q;
         Q = (Queue *)malloc(sizeof(Queue));
-        /* Initialise its properties */
         Q->packets;
-        //Q->elements = (int *)malloc(sizeof(p1)*maxElements);
         Q->size = 0;
         Q->capacity = maxElements;
         Q->front = 0;
         Q->rear = -1;
-        /* Return the pointer */
         return Q;
-}
-void Dequeue(Queue *Q)
-{
-        /* If Queue size is zero then it is empty. So we cannot pop */
+    }
+    //remove packets from Q
+    void Dequeue(Queue *Q)
+    {
+        //check if queue is 0. If not decrement size and move the front one packet forward. 
         if(Q->size==0)
         {
                 printf("Queue is Empty\n");
                 return;
         }
-        /* Removing an element is equivalent to incrementing index of front by one */
         else
         {
                 Q->size--;
                 Q->front++;
-                /* As we fill elements in circular fashion */
+                //if the front of the Q is also the end reset the front to 0. 
                 if(Q->front==Q->capacity)
                 {
                         Q->front=0;
                 }
         }
         return;
-}
-struct packet front(Queue *Q)
-{
+    }
+
+    //return the packet at the front of the Queue
+    struct packet front(Queue *Q)
+    {
         if(Q->size==0)
         {
                 printf("Queue is Empty\n");
                 exit(0);
         }
-        /* Return the element which is at the front*/
         return Q->packets[Q->front];
-}
-void Enqueue(Queue *Q,struct packet p1)
-{
-    /* If the Queue is full, we cannot push an element into it as there is no space for it.*/
-    if(Q->size == Q->capacity)
-    {
-        printf("Queue is Full\n");
     }
-    else
+
+    //add packet to queue 
+    void Enqueue(Queue *Q,struct packet p1)
     {
-        Q->size++;
-        Q->rear = Q->rear + 1;
-        /* As we fill the queue in circular fashion */
-        if(Q->rear == Q->capacity)
+        if(Q->size == Q->capacity)
         {
-            Q->rear = 0;
+            printf("Queue is Full\n");
         }
-        /* Insert the element in its rear side */ 
-        Q->packets[Q->rear] = p1;
+        else
+        {
+            Q->size++;
+            Q->rear = Q->rear + 1;
+            if(Q->rear == Q->capacity)
+            {
+                Q->rear = 0;
+            }
+            Q->packets[Q->rear] = p1;
+        }
+        return;
     }
-    return;
-}
 //create queue structure and construction packet.
 struct packet constructPacket;
 constructPacket.type = htons(111);
@@ -159,6 +160,7 @@ void *join_handler(struct registrationTable *clientData)
     newsock = clientData->sockid;
     printf("sockid %d\n", newsock);
     packet_con.type = htons(221);
+    //registration process
     if(send(newsock,&packet_con,sizeof(packet_con),0) < 0){
         printf("\n Send failed\n");
         exit(1);
@@ -177,6 +179,7 @@ void *join_handler(struct registrationTable *clientData)
             pthread_mutex_lock(&my_mutex);
             printf("\n===============================Register Table=========================\n");
             //update table
+            //copy client data to register table. 
             table[index].port = clientData->port; 
             table[index].sockid = newsock;
             table[index].group = clientData->group;
@@ -187,6 +190,8 @@ void *join_handler(struct registrationTable *clientData)
             printf("\nMachine name is :");
             printf(table[index].mName);
             printf("\nGroup number is :%d\n", table[index].group);
+
+            /*
             int i;
             for(i=0; i < index; i++)
             {
@@ -195,7 +200,7 @@ void *join_handler(struct registrationTable *clientData)
                 printf(table[i].uName);
                 printf("sockid: %d \n", table[i].sockid);
             //send data packets to each client in table
-            }
+            }*/
             pthread_mutex_unlock(&my_mutex);
             //send ack/con
             if(send(newsock,&packet_con,sizeof(packet_con),0) < 0)
@@ -207,7 +212,9 @@ void *join_handler(struct registrationTable *clientData)
         }
             
     }
+        //increment index after adding packet to table
         index ++;
+        //recieve data from clients and add it to the queue
         while(1)
         {
             if(recv(newsock,&packet_chat,sizeof(packet_chat),0)<0)
